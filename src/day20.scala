@@ -55,30 +55,30 @@ class Enhancer(enhancementString: IndexedSeq[Pixel]):
         for x <- -1 until (image.width + 1)
         yield enhancementString(pixelValue(image, x, y))
 
-    val outboundsPixel =
-      val value = if image.outboundsPixel == Pixel.Dark then 0 else 511
+    val outOfBoundsPixel =
+      val value = if image.outOfBoundsPixel == Pixel.Dark then 0 else 511
       enhancementString(value)
 
-    Image(pixels, outboundsPixel)
+    Image(pixels, outOfBoundsPixel)
   end enhance
 
   private def pixelValue(image: Image, x: Int, y: Int): Int =
     var result  = 0
-    var bitMask = 1
     for
-      yy <- (y + 1) to (y - 1) by -1
-      xx <- (x + 1) to (x - 1) by -1
+      yy <- (y - 1) to (y + 1)
+      xx <- (x - 1) to (x + 1)
     do
+      result = result << 1
       if image.pixel(xx, yy) == Pixel.Lit then
-        result = result | bitMask
+        result = result | 1
       end if
-      bitMask = bitMask << 1
+    end for
     result
   end pixelValue
 
 end Enhancer
 
-class Image(pixels: IndexedSeq[IndexedSeq[Pixel]], val outboundsPixel: Pixel):
+class Image(pixels: IndexedSeq[IndexedSeq[Pixel]], val outOfBoundsPixel: Pixel):
   require(pixels.nonEmpty, "There must be at least one row")
   require(pixels.map(_.length).distinct.size == 1, "All the rows must have the same length")
 
@@ -86,8 +86,8 @@ class Image(pixels: IndexedSeq[IndexedSeq[Pixel]], val outboundsPixel: Pixel):
   val width = pixels(0).length
 
   def pixel(x: Int, y: Int): Pixel =
-    if y < 0 || y >= height then outboundsPixel
-    else if x < 0 || x >= width then outboundsPixel
+    if y < 0 || y >= height then outOfBoundsPixel
+    else if x < 0 || x >= width then outOfBoundsPixel
     else pixels(y)(x)
 
   def countLitPixels(): Int =
@@ -103,7 +103,7 @@ object Image:
         .toIndexedSeq
     Image(
       pixels,
-      outboundsPixel = Pixel.Dark
+      outOfBoundsPixel = Pixel.Dark
     )
 
 def part2(input: String): Int =
